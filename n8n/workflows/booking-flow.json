@@ -1,0 +1,66 @@
+{
+  "name": "حجز موعد عيادة أسنان - واتساب",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "green-api-webhook",
+        "httpMethod": "POST",
+        "responseMode": "onReceived"
+      },
+      "name": "استقبال رسالة واتساب (Green API Webhook)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const body = items[0].json.body;\nconst senderData = body.senderData || {};\nconst messageData = body.messageData || {};\n\nconst whatsapp_number = (senderData.sender || '').replace(/[^0-9]/g, '');\nconst text = (messageData.textMessageData && messageData.textMessageData.textMessage) || '';\n\nreturn [{ json: { whatsapp_number, text } }];"
+      },
+      "name": "استخراج بيانات الرسالة",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.BACKEND_URL }}/api/whatsapp/incoming",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParametersJson": "={{ { \"whatsapp_number\": $json.whatsapp_number, \"text\": $json.text } }}",
+        "options": { "bodyContentType": "json" }
+      },
+      "name": "معالجة الرسالة بالباك إند",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.green-api.com/waInstance{{$env.GREEN_API_ID_INSTANCE}}/sendMessage/{{$env.GREEN_API_TOKEN}}",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "chatId", "value": "={{$node[\"استخراج بيانات الرسالة\"].json.whatsapp_number}}@c.us" },
+            { "name": "message", "value": "={{$json.reply}}" }
+          ]
+        }
+      },
+      "name": "إرسال الرد عبر واتساب",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [860, 300]
+    }
+  ],
+  "connections": {
+    "استقبال رسالة واتساب (Green API Webhook)": {
+      "main": [[{ "node": "استخراج بيانات الرسالة", "type": "main", "index": 0 }]]
+    },
+    "استخراج بيانات الرسالة": {
+      "main": [[{ "node": "معالجة الرسالة بالباك إند", "type": "main", "index": 0 }]]
+    },
+    "معالجة الرسالة بالباك إند": {
+      "main": [[{ "node": "إرسال الرد عبر واتساب", "type": "main", "index": 0 }]]
+    }
+  }
+}

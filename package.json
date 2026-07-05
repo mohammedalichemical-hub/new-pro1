@@ -1,0 +1,19 @@
+{
+  "name": "dental-booking-backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "migrate": "node -e \"const{execSync}=require('child_process');const fs=require('fs');const url=process.env.DATABASE_URL;if(!url){console.error('DATABASE_URL not set');process.exit(1)}fs.readdirSync('database').filter(f=>f.endsWith('.sql')).sort().forEach(f=>{console.log('Running',f);execSync(`psql \\\"${url}\\\" -f database/${f}`,{stdio:'inherit'})})\"",
+    "create-admin": "node server/create-admin.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.12.0"
+  }
+}
